@@ -1,0 +1,471 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<title>Dziedziczenie, kompozycja, kolekcje, stream api</title>
+
+		<link rel="stylesheet" href="dist/reset.css">
+		<link rel="stylesheet" href="dist/reveal.css">
+		<link rel="stylesheet" href="dist/theme/moon.css">
+
+		<!-- Theme used for syntax highlighted code -->
+		<link rel="stylesheet" href="plugin/highlight/monokai.css">
+	</head>
+	<body>
+		<div class="reveal">
+			<div class="slides">
+				<section data-markdown>
+				  <textarea data-template>
+					## Dziedziczenie vs kompozycja
+					---
+					##### Dziedziczenie
+					- Dziedziczenie - element programowania obiektowego umożliwiający tworzenie hierarchii klas.
+					- Kolejne klasy w hierarchii posiadają zarówno pola, jak i metody, klas, które je poprzedzają, oraz mogą zawierać nowe pola i metody.
+					---
+					#### Dziedziczenie przykład*
+					![Inheritance!](/images/inheritance.svg "Inheritance")
+					---
+					#### Kolejność wywoływania konstruktorów
+					  - Kolejność wywoływania konstuktorów jest zgodna z kolejnością dziedziczenia
+					---
+					#### Przesłanianie metod (overload)*
+					- Metoda klasy podrzędnej przesłania metodę klasy nadrzędnej jeśli ma tę samą nazwę oraz sygnaturę typu co metoda klasy nadrzędnej
+					- Wywołanie takiej metody dla instacji podklasy zawsze spowoduje wykonanie wersji zdefiniowanej w podklasie
+					- Przesłanianie nie działa dla pól
+					---
+					#### Agregacja
+					  - Określa związek część - całość
+					  - Istnieją dwa typy agregacji
+					  	- całkowita (kompozycja, silna agregacja)
+					    - częściowa (asocjacja, słaba agregacja)
+					---
+					#### Silna i słaba agregacja
+					  - W przypadku silnej agregacji części składowe nie mogą istnieć jeśli symbol określający całość jest usunięty. Analogia do zawierania obiektu przez inny obiekt.
+					  - W przypadku słabej agregacji jest to możliwe. Jeden obiekt może być też zawierany przez wiele innych.
+					---
+					#### Przykłady
+					  - Asocjacja
+
+					   ![Asocjacja!](/images/asocjacja.svg "Asocjacja")
+
+					  - Kompozycja
+
+					    ![Kompozycja!](/images/kompozycja.svg "Kompozycja")
+					---
+					#### Symulator Kaczki - przydkład dziedziczenia vs kompozycja
+					  - Zadaniem aplikacji jest wyświetlanie wielu gatunków kaczek, które potrafią pływac oraz kwakac.
+					---
+					#### Architektura* :)
+					  ![Architekura!](/images/kaczki_class_diagram.svg "Class diagram")
+					---
+					#### Kaczki mają latac
+					  ![Kaczki latanie!](/images/kaczki_latanie.svg "kaczki latanie")
+					---
+					#### Co z tym zrobić? - wzorzec strategia*
+					  - Oddziel to co się zmienia od tego co pozostaje niezmienione
+					  - Metody `lec()` oraz `kwacz()` oraz `wyświetl()` są metodami, ktore są przesłanianie (overload) w podklasach
+					  - Należy wyciągnąć te trzy metody z klasy `Kaczka` a następnie utworzyć zestaw nowych klasy reprezentujacych te zachowania (algorytmy)
+					---
+					#### Bez dziedziczenia
+					  ![Strategia!](/images/kaczka_strategia.svg "strategia")
+					---
+					#### Jakie problemy związane z dziedziczeniem rozwiązaliśmy?
+					  - Duplikacja kodu w kolejnych podklasach
+					  - Trudności ze zmianą zachowania metod podczas działania programu
+					  - Trudności ze zebraniem zachowań wszystkich kaczek
+					  - Wprwadzane zmiany mogą mieć wpływ na wszystkie kaczki
+					---
+					## Framework collections
+					---
+					#### Wstęp
+					  - Framework collections Javy standaryzuje sposób obsługi zbiorów obiektów
+					  - Dostarcza implementację podstawych kolekcji (listy,zbiory, kolejki, mapy)
+					  - Ujedolica sposób korzystania z różnych kolekcji i ułatwia ich łączne stosowanie
+					---
+					#### Interface Collection
+					  - Reprezentuje grupę elementów
+					  - Wszystkie kolekcje implementują intefejs `Collection` w wyjątkiem `Map`
+					  - Rozszerza interfejs `Iterable` dzięki czemu przez każdą kolekcję można przejść uzywając pętli `for-each`
+					---
+					#### Metody Interfejsu `Collection`*
+
+					  	public interface Collection<E> extends Iterable<E> {
+							// Query Operations
+							int size();
+							boolean isEmpty();
+							boolean contains(Object o);
+							Iterator<E> iterator();
+							Object[] toArray();
+							<T> T[] toArray(T[] a);
+							default <T> T[] toArray(IntFunction<T[]> generator) {}
+							// Modification Operations
+							boolean add(E e);
+							boolean remove(Object o);
+							// Bulk Operations
+							boolean containsAll(Collection<?> c);
+							boolean addAll(Collection<? extends E> c);
+							boolean removeAll(Collection<?> c);
+							default boolean removeIf(Predicate<? super E> filter) {}
+							boolean retainAll(Collection<?> c);
+							void clear();
+							// Comparison and hashing
+							boolean equals(Object o);
+							int hashCode();
+							@Override
+							default Spliterator<E> spliterator() {};
+							default Stream<E> stream() {};
+							default Stream<E> parallelStream(){}
+						}
+					---
+					#### `Iterator`
+					  - Definiuje ogólny, ustandaryzowany sposób dostępu do elementów kolekcji (po jednym w danym momencie)
+					  - Pozwala przejść przez wszystkie elementy kolekcji od poczatku do końca.
+					---
+					#### Iterowanie po kolekcji: for each
+
+					  		public static void main(String[] args) {
+								List<String> arrayStrings = new ArrayList<String>();
+								arrayStrings.add("hello");
+								arrayStrings.add("goodbye");
+								for(String item : arrayStrings)
+									System.out.println(item);
+
+					  			arrayStrings.forEach(System.out:println);
+							}
+					---
+					####  Iterowanie po kolekcji: iterator
+
+					  		public static void main(String[] args) {
+					  			List<String> arrayStrings = new ArrayList<String>();
+					  			arrayStrings.add("hello");
+					  			arrayStrings.add("goodbye");
+					  			Iterator<String> it = arrayStrings.iterator();
+					  			while (it.hasNext()) {
+									System.out.println(it.next());
+					  			}
+					  		}
+					---
+					#### Interface `List`
+					  - Jest kolekcją uporządkowaną
+					  - Może przechowywac duplikaty
+					  - W stosunku do `Collection` umożliwia dodatkowo:
+					---
+					  - Dodawanie, usuwanie, pobieranie elementów na podstawie ich położenia
+
+							public static void main(String[] args) {
+								List strList = new ArrayList<>();
+									//add at last
+									strList.add(0, "0");
+									//add at specified index
+									strList.add(1, "1");
+									//replace
+									strList.set(1, "2");
+									//remove
+									strList.remove(1);
+					  				// returns "0"
+					  				strList.get(0)
+							}
+					---
+					  - Wyszukiwanie - Dostarcza metod zwracających pozycję (index) wyszukiwanego elementu.
+
+					  		public static void main(String[] args) {
+								List<String> arrayStrings = new ArrayList<>();
+								arrayStrings.add("hello");
+								arrayStrings.add("how are you");
+								arrayStrings.add("goodbye");
+								arrayStrings.add("hello");
+
+								arrayStrings.indexOf("hello");
+								//returns 0
+
+								arrayStrings.lastIndexOf("hello");
+								//returns 3
+							}
+					---
+					  #### *
+					  - Range-View Operation. Realizaowany za pomocą metody `subList(int fromIndex, int toIndex)`. Uwaga, `subList()` zwraca widok
+
+							public static void main(String[] args) {
+								List<Character> arrayChars = new ArrayList<Character>();
+								arrayChars.add('a');
+								arrayChars.add('b');
+								arrayChars.add('c');
+
+								arrayChars.subList(0, 1).clear();
+
+					  			//output is b,c
+					  			arrayChars.forEach(System.out:println);
+							}
+					---
+					#### Implementacje List
+					  - **ArrayList** Jest najczęsciej używaną kolekcją. Jest zaimplementowana jako tablica o zmiennym rozmiarze
+					  - **LinkedList** Dane są pamiętane w strukturze listy gdzie każdy element posiada wskaźnik do następnego i poprzedniego elementu.
+					  To sprawia, że `LinkedList` jest lepsza (szybsza) do operacji dodawania (`add()`) i usuwania (`remove()`) ale gorsza do `get()` i `set()`
+					---
+					#### Interfejs Set
+					  - Nie można przechowywac duplikatow (Po warunkiem prawidłowej implementacji metod equals() and hashCode())
+					  - Iteracja za pomocą for-each, iteratora
+					---
+					#### HashSet
+					  - Jest zaimplementowany przy użyciu tablicy mieszającej (HashMap)
+					  - Złożonośc dla podstawowych operacji jak add(), remove(), contains() wynosi O(1)
+					  - Nie gwarantuje kolejności
+					---
+					#### TreeSet
+					  - Kolecja jest przechowywana w strukturze drzewiastej (TreeMap)
+					  - Złożonośc podstawowych metod O(log(n)
+					  - Elementy są sortowane w porządku naturalnym (elementy `Comparable`) lub wg przekazanego komparatora (`Comparator`)
+					  - `Comparator` oraz `Comparable`  muszą byc spójne z metdą `equals()`. `TreeSet` używa metody `compareTo()` zamiast `equals()`
+					---
+					#### LinkedHashSet *
+					  - Zaimplementowana przy użyciu LinkedHashMap
+					  - Gwarantuje kolejnośc elementów
+					  - Złożonośc obliczeniowa dla podstawowych operacji: O(1).
+					---
+					#### Interfejs Queue
+					  - Definiuje kolejki FIFO
+
+					  		public static void main(String[] args) {
+								Queue<Character> myQueue = new LinkedList<Character>();
+								myQueue.add('a');
+								myQueue.add('b');
+								myQueue.add('c');
+								myQueue.add('d');
+								myQueue.add('e');
+					  			//add() throws exception on fail
+
+								myQueue.offer('f');
+								//adds 'f', return false on fail
+
+								myQueue.remove();
+								//retrieves and removes 'a', throws exception on fail
+
+								myQueue.poll();
+								//Retrieves and removes 'b', return null on fail
+
+								myQueue.element();
+								//returns 'b', throws exception on fail
+
+								myQueue.peek();
+								//returns 'b', return null on fail
+
+								System.out.println(myQueue);
+								//prints [c, d, e, f]
+							}
+					---
+					#### Interfejs Dequeue
+					  - Rozszerza `Queue`
+					  - Deklaruje zachowania kolejki dwuwymiarowej zarówno w trybie FIFO jaki i LIFO
+					---
+					#### Interfejs Dequeue - przyklad
+
+					  	public static void main(String[] args) {
+							Deque<Character> myQueue = new LinkedList<Character>();
+							myQueue.add('a');
+							myQueue.add('b');
+							myQueue.add('c');
+							myQueue.add('d');
+
+							myQueue.addFirst('e');
+							//adds 'e' to start of myQueue
+
+							myQueue.offerLast('f');
+							//adds 'f' to end of myQueue
+
+							myQueue.removeFirst();
+							//removes 'e'
+
+							myQueue.pollLast();
+							//remove 'f'
+
+							myQueue.getFirst();
+							//returns 'a'
+
+							myQueue.peekLast();
+							//returns 'd'
+
+							myQueue.removeFirstOccurrence('b');
+							//removes first occurance of 'b'
+
+							System.out.println(myQueue);
+							//prints [a, c, d]
+						}
+					---
+					#### Interfejs Map
+					- Określa mapę z unikatowymi kluczami dla wartości
+					- Należą do frameworla Collection ale nie implementują `Collection`
+
+					  	public static void main( String[] args ) {
+							Map<String, Integer> myMap = Map.of(
+									"Sam", 33,
+									"Erica", 49,
+									"Ted", 12
+							);
+
+					  		myMap.keySet().forEach(key -> System.out.println(key  + ", " + myMap.get(key))
+
+							for(Map.Entry<String, Integer> e : myMap.entrySet())
+								System.out.println(e.getKey() + ", " +  e.getValue());
+						}
+					---
+					#### HashMap
+					  - Gwarantuje stały czas wykonanie metod `get()` i `put()`
+					  - Nie gwarantuje kolejności
+					---
+					#### LinkedHashMap
+					  - Roszerza klasę `HashMap`
+					  - Gwarantuje koleność - przechowuje listę określającą kolejność umieszczania wpisów w mapie
+					---
+					#### TreeMap
+					  - Sortuje klucze w porządku naturalnym (klucze `Comparable`) lub wg przekazanego komparatora (`Comparator`)
+					  - Złożonośc obliczeniowa dla get, put and remove to O(log(n))
+					  - `Comparator` oraz `Comparable`  muszą byc spójne z metdą `equals()`. `TreeMap` używa metody `compareTo()` zamiast `equals()`
+					---
+					#### Algorytmy kolekcji
+					  - Frawmework Collections dostarcza kilkanaście algorytmów, które mogą byc stosowane dla kolekcji i map
+					  - Algorymy te są metodami statycznymi klasy `Collections`
+					---
+					#####
+					  - Metody oddające zsynchronizowane kolekcje (żadna ze standardowych kolekcji nie jest synchronizowana)
+
+							public static Collection synchronizedCollection(Collection c)
+							public static Set synchronizedSet(Set s);
+							public static List synchronizedList(List list);
+							public static <K,V> Map<K,V> synchronizedMap(Map<K,V> m);
+							public static SortedSet synchronizedSortedSet(SortedSet s);
+							public static <K,V> SortedMap<K,V> synchronizedSortedMap(SortedMap<K,V> m);
+
+					  - Iteratory kolekcji synchronicznych muszą byc używane wewnątrz bloku `synchronized`
+					---
+					  - Metody oddające niemodyfikowalne kolekcje
+
+					    	public static Collection unmodifiableCollection(Collection<? extends T> c);
+					    	public static Set unmodifiableSet(Set<? extends T> s);
+					    	public static List unmodifiableList(List<? extends T> list);
+					    	public static <K,V> Map<K, V> unmodifiableMap(Map<? extends K, ? extends V> m);
+					    	public static SortedSet unmodifiableSortedSet(SortedSet<? extends T> s);
+					    	public static <K,V> SortedMap<K, V> unmodifiableSortedMap(SortedMap<K, ? extends V> m);
+					---
+					  #### *
+					  - Wybrane pozostałe metody
+
+					  	    public static <T extends Comparable<? super T>> void sort(List<T> list)
+							public static <T> void sort(List<T> list, Comparator<? super T> c)
+							public static void shuffle(List<?> list)
+							public static <T> int binarySearch(List<? extends Comparable<? super T>> list, T key)
+							public static int frequency(Collection<?> c, Object o)
+							public static boolean disjoint(Collection<?> c1, Collection<?> c2)
+							public static <T extends Object & Comparable<? super T>> T min(Collection<? extends T> coll)
+							public static <T> T min(Collection<? extends T> coll, Comparator<? super T> comp)
+							public static <T extends Object & Comparable<? super T>> T max(Collection<? extends T> coll)
+							public static <T> T max(Collection<? extends T> coll, Comparator<? super T> comp)
+					---
+					## Stream api
+					---
+					#### Stream
+					  - Strumień w Java to sekwencja obiektow na której można wykonac ciąg operacji (pipeline) w celu osiągnięcia porządanych wyników
+					  - operacje na strumieniu mogą byc wykonywane sekwencyjnie lub równolegle
+					  - Nie przechowują danych
+					  - Nie modyfikują źródła
+					---
+					#### Operacje na Streamach
+					  - Końcowe (terminal) - nie zwracają nic (void), bądź ich wynik nie jest już strumieniem
+					  - Pośrednie (intermediate) - zwracają strumień dzieki czemu można je łączyc bez średnika.
+					    Są operacjami lazyness co oznacza, że nie zostaną wykonane dopóki nie zostanie wykonana operacja terminal.
+					---
+					#### Przykład *
+
+						List<String> namesList = List.of("John", "Marry", "George", "Paul", "Alice", "Ann");
+						namesList
+							.stream()
+							.filter(e -> e.startsWith("A");
+							.map(String::toUpperCase)
+							.forEach(System.out::println)
+					---
+					#### DoubleStream, IntStream, LongStream *
+					  - Działają na prymitywnych typach double, int oraz long
+					  - Nie rozszerzają `Stream` a `BaseStream`
+					  - Dostarczają dodatkowych metod np `sum()` i `average()`
+					---
+					#### Reużywanie strumieni
+					  - Strumień może byc użyty tylko raz.
+					  - W celu obejścia tego ograniczenia można użyc interfejsu `Supplier`
+
+							Supplier<Stream<String>> supplier = () -> Stream.of("Tomek", "Maciej", "Kasia", "Ania", "Piotr", "Agata");
+							supplier.get().map(String::toUpperCase).forEach(System.out::println);
+							supplier.get().map(String::toLowerCase).forEach(System.out::println);
+					---
+					  #### Collect *
+					  - Metoda collect przekształca strumień na inną struktuę danych np.: `List`, `Set`, `Map`, `String`
+
+							Set<Integer> intSet = IntStream.of(1,2,3,4,5,6,7,8,9,2,3,5,6)
+								.boxed()
+								.collect(Collectors.toSet())
+								//prints [1,2,3,4,5,6,7,8,9]
+								System.out.println(intSet);
+					---
+					  #### FlatMap
+					  - Służy do przekształcania struktur jednowymiarowych w wielowymiarowe np [[1,2], [3,4]] na [1,2,3,4]
+
+							 List<Integer> slicedIntegers = List.of(
+									List.of(1,2),
+									List.of(3,4)
+								)
+								.stream()
+								.flatMap(List::stream)
+								.collect(Collectors.toList())
+							 // prints [1,2,3,4]
+							 System.out.println(slicedIntegers);
+					---
+					  #### Reduce *
+					  - Łączy wszystkie elementy strumienia w jeden wynikowy element
+					  - Przyklady redukcji w Stream api: `findFirst()`, `min()`, `max()`
+					---
+					  #### TakeWhile / DropWhile
+							IntStream.range(1,20)
+								.takeWhile(i -> i < 10)
+								.forEach(System.out::println);
+					---
+					  #### Parallel Streams *
+					  - W przypadku strumieni z dużą ilością elementów do przetworzenia operacje mogą zostatac zrównoleglone w celu poprawienia wydajności
+					  - W każdej operacji na parallel streams programista odpowiada ze bezpieczeństwo z punktu widzenia wielowątkowości
+					  - Pararell Streams używają puli wątków `ForkJoinPool`
+					  - Powinny byc używane tylko w razie problemów z wydajnością "zwykłych" streamów
+					---
+					  #### Collectory dla parallel streams *
+
+						Collectors.toConcurrentMap(keyMapper, valueMapper);
+						Collectors.toConcurrentMap(keyMapper, valueMapper, mergeFunction);
+						Collectors.toConcurrentMap(keyMapper, valueMapper, mergeFunction, mapFactory);
+						Collectors.groupingByConcurrent(classifier);
+						Collectors.groupingByConcurrent(classifier, downstream);
+						Collectors.groupingByConcurrent(classifier, mapFactory, downstream);
+
+					---
+					  ## Dziękuję za uwagę
+
+				  </textarea>
+
+				</section>
+			</div>
+		</div>
+
+		<script src="dist/reveal.js"></script>
+		<script src="plugin/notes/notes.js"></script>
+		<script src="plugin/markdown/markdown.js"></script>
+		<script src="plugin/highlight/highlight.js"></script>
+		<script>
+			// More info about initialization & config:
+			// - https://revealjs.com/initialization/
+			// - https://revealjs.com/config/
+			Reveal.initialize({
+				hash: true,
+
+				// Learn about plugins: https://revealjs.com/plugins/
+				plugins: [ RevealMarkdown, RevealHighlight, RevealNotes ]
+			});
+		</script>
+	</body>
+</html>
